@@ -113,20 +113,23 @@ def mapping(socket):
     non_visited_grids = 1
     x = y = 4
 
-    # we assume that the wall begind the 
+    # we assume that there is a wall behind 
     map[x][y].non_visited_neighbors = 3
     map[x][y].down_wall = True
     
     while(non_visited_grids > 0):
+        # if the number of non visited neighbors is 0, go one step back, again.
         if map[x][y].non_visited_neighbors == 0:
             current_grid = [x,y]
             target_grid = [map[x][y].last_move[0], map[x][y].last_move[1]]
             
             move_to_next_grid(current_grid, target_grid)
             continue
-        
-        color = colorS.color_name()
+
+        # get and set the color of the current grid
+        color = get_color()
         map[x][y].color = color
+        # if the color is black, go one step back
         if color == "Black":
             current_grid = [x,y]
             target_grid = [map[x][y].last_move[0], map[x][y].last_move[1]]
@@ -134,35 +137,37 @@ def mapping(socket):
             
             move_to_next_grid(current_grid, target_grid)
             continue
-
+        # next grid that will be visited
         next_grid = [x,y]
-
-        if check_wall(2):   # check Left wall
+        # check Left wall
+        if check_wall(2):   
             map[x][y].left_wall = True
             map[x][y].non_visited_neighbors -= 1
-        else:
-            if not map[x-1][y].visited:  # if the visible grid is not visited, then acknowledge that the mapping is incomplete
+        else: # if the visible grid is not visited, then acknowledge that the mapping is incomplete
+            if not map[x-1][y].visited: 
                 non_visited_grids += 1
                 next_grid[0] = x-1
-        
-            if not map[x][y].visited:       # decrement the visible grid's n_v_n
-                map[next_grid[0]][next_grid[1]].non_visited_neighbors -= 1 # decrementing n_v_n
+            # decrement the visible grid's n_v_n
+            if not map[x][y].visited:       
+                # decrementing n_v_n
+                map[next_grid[0]][next_grid[1]].non_visited_neighbors -= 1 
 
-
-
-        if check_wall(1):  # check Right wall
+        # check Right wall
+        if check_wall(1):  
             map[x][y].right_wall = True
             map[x][y].non_visited_neighbors -= 1
         else:
+            # IMPORTANT: Since the robot has turn to right for coming its current position, now the right side of the robot will
+            # be map[x][y-1] not map[x+1][y] !!!!
             if not map[x+1][y].visited:
                 non_visited_grids += 1
                 next_grid[0] = x+1
-            
+
             if not map[x][y].visited:
                 map[next_grid[0]][next_grid[1]].non_visited_neighbors -= 1
 
-
-        if check_wall(0): # check Up wall
+        # check Up wall
+        if check_wall(0): 
             map[x][y].up_wall = True
             map[x][y].non_visited_neighbors -= 1
         else:
@@ -173,19 +178,20 @@ def mapping(socket):
             if not map[x][y].visited:
                 map[next_grid[0]][next_grid[1]].non_visited_neighbors -= 1
 
-
-        if not map[x][y].visited: # If the current grid not visited before, then mark it visited
+        # If the current grid is not visited before, then mark it visited
+        if not map[x][y].visited: 
             map[x][y].visited = True
+            non_visited_grids -= 1
             # BLUETOOTH COMMUNICATION SHOULD OCCUR HERE!
             s.send(get_color())
-            non_visited_grids -= 1
-
-        if map[x][y].non_visited_neighbors != 0: # if all neighbors are visited, go back by DFS route
+            
+        # if all neighbors are visited, go back by DFS route
+        if map[x][y].non_visited_neighbors == 0: 
             current_grid = [x,y]
             target_grid = [map[x][y].last_move[0], map[x][y].last_move[1]]
             
             move_to_next_grid(current_grid, target_grid)
-        else:                # if you go to a nonvisited grid, save its last_move due to DFS, and go there
+        else: # if you can go to a nonvisited grid, save its last_move due to DFS, and go there
             current_grid = [x,y]
             map[next_grid[0]][next_grid[1]].last_move[0] = x
             map[next_grid[0]][next_grid[1]].last_move[1] = y
