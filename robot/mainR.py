@@ -18,7 +18,7 @@ import grid
 # MOTOR METHODS
 speed = 20
 wheelDiameter = 56
-wheelBase = 120
+wheelBase = 115
 
 rightMotor = LargeMotor(OUTPUT_D)
 leftMotor = LargeMotor(OUTPUT_A)
@@ -52,13 +52,31 @@ def calculateRotationsFor90DegreeTurn(wheelBase, wheelDiameter):
 def turn90DegreeMotor(motor, wheelDiameter, wheelBase, speed):
     motor.on_for_rotations(speed, calculateRotationsFor90DegreeTurn(wheelBase, wheelDiameter))
 
-def turn90DegreeTank():
-    rightMotorThread = threading.Thread(target=turn90DegreeMotor, args=(rightMotor, wheelDiameter, wheelBase, -speed))
-    leftMotorThread = threading.Thread(target=turn90DegreeMotor, args=(leftMotor, wheelDiameter, wheelBase, speed))
-    rightMotorThread.start()
-    leftMotorThread.start()
-    rightMotorThread.join()
-    leftMotorThread.join()
+def turn90DegreeTank(turnDegree):
+    if turnDegree > 0:
+        for _ in range(int(turnDegree/90)):
+            rightMotorThread = threading.Thread(target=turn90DegreeMotor, args=(rightMotor, wheelDiameter, wheelBase, -speed))
+            leftMotorThread = threading.Thread(target=turn90DegreeMotor, args=(leftMotor, wheelDiameter, wheelBase, speed))
+            rightMotorThread.start()
+            leftMotorThread.start()
+            rightMotorThread.join()
+            leftMotorThread.join()
+    elif turnDegree < 0:
+        for _ in range(int(abs(turnDegree/90))):
+            rightMotorThread = threading.Thread(target=turn90DegreeMotor, args=(rightMotor, wheelDiameter, wheelBase, speed))
+            leftMotorThread = threading.Thread(target=turn90DegreeMotor, args=(leftMotor, wheelDiameter, wheelBase, -speed))
+            rightMotorThread.start()
+            leftMotorThread.start()
+            rightMotorThread.join()
+            leftMotorThread.join()
+    else:
+        return
+
+def debug_print(*args, **kwargs):
+    '''Print debug messages to stderr.
+    This shows up in the output panel in VS Code.
+    '''
+    print(*args, **kwargs, file=sys.stderr)
 # ################################################################################################################# #
 
 # MAPPING
@@ -76,23 +94,28 @@ current_direction = direction["up"]
 def move_to_next_grid(initial_pos, next_pos):
     global current_direction
 
+    debug_print(str(initial_pos) + " " + str(next_pos))
+
     dx = next_pos[0] - initial_pos[0]
     dy = next_pos[1] - initial_pos[1]
+    control = (-dx+1)%2
+    target_direction = 0
+    if control == 0:
+        target_direction += (-dx+1)/2 * 3
+    else:
+        target_direction += (-dy+1)/2 * 2
 
-    target_direction = -1 * (dx - 1) + (-dy +2) 
     turn_number = (target_direction - current_direction) % 4 
     if turn_number == 3:
         turn_number = -1
     turn_degree = turn_number * 90
-    # THIS CAN BE REPLACED BY TURN90DEGREETANK METHOD SINCE MOVEDIFF IS NOT OPTIMIZED
-    moveDiff.turn_to_angle(20, turn_degree)
-
+    
+    turn90DegreeTank(turn_degree)
     current_direction = target_direction
-
     moveForwardTank(330)
 
 def get_color():
-    value = colorS.color_name()
+    value = colorS.value()
     sleep(0.1)
     return value
 
@@ -115,7 +138,11 @@ def check_wall(wall_direction):
         sleep(0.1)
         ultrasonicM.on_for_degrees(20, 90)
 
-    return value < 20
+    value = value / 10
+
+    debug_print("UltraS Value: " + str(value))
+
+    return value < 25
 
 
 def orientation(current_grid, local_bias):
@@ -125,7 +152,7 @@ def orientation(current_grid, local_bias):
     global_bias = current_direction
     orientations = [[0,1], [1,0], [0,-1], [-1,0]] 
 
-    heading = orientations[(local_bias + global_bias) % 4]
+    heading = orientations[int((local_bias + global_bias) % 4)]
     next_grid = [current_grid[0] + heading[0], current_grid[1] + heading[1]]
 
     return next_grid
@@ -134,6 +161,9 @@ def orientation(current_grid, local_bias):
 def check_side(current_grid, wall_direction, next_grid, unvisited_grids):
     global map
     wall_detected = check_wall(wall_direction)
+
+    debug_print("Wall Detected: " + str(wall_detected))
+
     x = current_grid[0]
     y = current_grid[1]
 
@@ -200,7 +230,7 @@ def mapping(socket):
             map[x][y].visited = True
             unvisited_grids -= 1
             # BLUETOOTH COMMUNICATION SHOULD OCCUR HERE!
-            s.send(get_color())
+            # s.send(get_color())
             if unvisited_grids == 0:
                 print("BEEP! BEEP! BEEP!")
                 # THE MAPPING MODE SHOULD TERMINATE
@@ -237,16 +267,16 @@ if __name__ == "__main__":
     # for buttons : pressed_m, pressed_t, pressed_i, pressed_r,
     # in mapping mode: m_<i>_<j>_<color_num>_<wall_encoded> OR m_already OR m_is_over
 
-    server_mac = '88:B1:11:79:C5:F6'
-    port = 4 
-    btn = Button()
+    # server_mac = '88:B1:11:79:C5:F6'
+    # port = 4 
+    # btn = Button()
 
-    s = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-    s.connect((server_mac, port))
+    # s = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+    # s.connect((server_mac, port))
     
     # while not btn.any():
     #     sleep(0.05)
 
     # BASILAN BUTONU BUL
-
+    s = "BY"
     mapping(s)
