@@ -13,6 +13,8 @@ from ev3dev.ev3 import Sound
 import sys, threading, math, pickle, copy, bluetooth
 import grid
 # ################################################################################################################# #
+
+
 # MOTOR METHODS
 speed = 20
 wheelDiameter = 56
@@ -62,7 +64,14 @@ def turn90DegreeTank():
 # MAPPING
 map = [[grid.Grid() for x in range(9)] for y in range(9)]
 
-current_direction = 0 # 0-up, 1-right, 2-down, 3-left
+direction = {  
+  "up": 0,
+  "right": 1,
+  "down": 2,
+  "left": 3
+}
+
+current_direction = direction["up"]
 
 def move_to_next_grid(initial_pos, next_pos):
     global current_direction
@@ -70,15 +79,15 @@ def move_to_next_grid(initial_pos, next_pos):
     dx = next_pos[0] - initial_pos[0]
     dy = next_pos[1] - initial_pos[1]
 
-    ideal_direction = -1 * (dx - 1) + (-dy +2)
-    turn_number = (ideal_direction - current_direction) % 4 
+    target_direction = -1 * (dx - 1) + (-dy +2) 
+    turn_number = (target_direction - current_direction) % 4 
     if turn_number == 3:
         turn_number = -1
     turn_degree = turn_number * 90
     # THIS CAN BE REPLACED BY TURN90DEGREETANK METHOD SINCE MOVEDIFF IS NOT OPTIMIZED
     moveDiff.turn_to_angle(20, turn_degree)
 
-    current_direction = ideal_direction
+    current_direction = target_direction
 
     moveForwardTank(330)
 
@@ -87,13 +96,13 @@ def get_color():
     sleep(0.1)
     return value
 
+# returns True if there is a wall just next to the robot
 def check_wall(wall_direction):
-    # 0 - Up, 1 - Right, 2 - Left
     value = 0
-    if wall_direction == 0:
+    if wall_direction == direction["up"]:
         value = ultrasonicS.value()
         sleep(0.1)
-    elif wall_direction == 1:
+    elif wall_direction == direction["right"]:
         ultrasonicM.on_for_degrees(20, 90)
         sleep(0.1)
         value = ultrasonicS.value()
@@ -109,96 +118,105 @@ def check_wall(wall_direction):
     return value < 20
 
 
+def orientation(current_grid, local_bias):
+    # local_bias : 0 for checking the up wall, 1 for the right, 3 for the left
+    # current_direction: the global bias of robot from the upward direction, 0 for up, 1,2,3 in cw
+
+    global_bias = current_direction
+    orientations = [[0,1], [1,0], [0,-1], [-1,0]] 
+
+    heading = orientations[(local_bias + global_bias) % 4]
+    next_grid = [current_grid[0] + heading[0], current_grid[1] + heading[1]]
+
+    return next_grid
+
+
+def check_side(current_grid, wall_direction, next_grid, unvisited_grids):
+    global map
+    wall_detected = check_wall(wall_direction)
+    x = current_grid[0]
+    y = current_grid[1]
+
+    if wall_detected:
+            map[x][y].wall[wall_direction] = True
+            map[x][y].unvisited_neighbors -= 1
+    else:  # if the visible grid is not visited, acknowledge that the mapping task is incomplete
+
+        visible_grid = orientation([x,y], wall_direction)
+        if not map[visible_grid[0]][visible_grid[1]].visited: 
+            unvisited_grids += 1
+            next_grid = visible_grid
+        
+        if not map[x][y].visited:       
+            # decrement the visible grid's n_v_n
+            map[next_grid[0]][next_grid[1]].unvisited_neighbors -= 1 
+
+    return next_grid, unvisited_grids
+
 def mapping(socket):
-    non_visited_grids = 1
+    global map
+    unvisited_grids = 1
     x = y = 4
 
-    # we assume that there is a wall behind 
-    map[x][y].non_visited_neighbors = 3
-    map[x][y].down_wall = True
+    # we assume that there is a wall behind the start location
+    map[x][y].unvisited_neighbors = 3
+    map[x][y].wall[direction["down"]] = True 
     
-    while(non_visited_grids > 0):
-        # if the number of non visited neighbors is 0, go one step back, again.
-        if map[x][y].non_visited_neighbors == 0:
-            current_grid = [x,y]
-            target_grid = [map[x][y].last_move[0], map[x][y].last_move[1]]
-            
-            move_to_next_grid(current_grid, target_grid)
-            continue
+    while(unvisited_grids > 0):
+
+        current_grid = [x,y]  # address of current grid
+        next_grid = [x,y]  # address of next grid that will be visited
+        check_neighbors = True  # the boolean value if we need to check neighbors
+
+        
+        if map[x][y].unvisited_neighbors == 0:
+            check_neighbors = False
+            if map[x][y].visited: # if itself and all neighbors are visited, go one step back in DFS route.
+                next_grid = [map[x][y].last_move[0], map[x][y].last_move[1]]
+                move_to_next_grid(current_grid, next_grid)
+                continue
 
         # get and set the color of the current grid
         color = get_color()
         map[x][y].color = color
-        # if the color is black, go one step back
+
+        # if the color is black, send information, go one step back
         if color == "Black":
-            current_grid = [x,y]
-            target_grid = [map[x][y].last_move[0], map[x][y].last_move[1]]
-            non_visited_grids -= 1
-            
-            move_to_next_grid(current_grid, target_grid)
+            map[x][y].visited = True
+            temp = unvisited_grids - 1
+            for side in ["left","right","up"]:
+                _, _ = check_side(current_grid, direction[side], next_grid, unvisited_grids)
+            next_grid = map[x][y].last_move
+            unvisited_grids = temp
+            move_to_next_grid(current_grid, next_grid)
             continue
-        # next grid that will be visited
-        next_grid = [x,y]
-        # check Left wall
-        if check_wall(2):   
-            map[x][y].left_wall = True
-            map[x][y].non_visited_neighbors -= 1
-        else: # if the visible grid is not visited, then acknowledge that the mapping is incomplete
-            if not map[x-1][y].visited: 
-                non_visited_grids += 1
-                next_grid[0] = x-1
-            # decrement the visible grid's n_v_n
-            if not map[x][y].visited:       
-                # decrementing n_v_n
-                map[next_grid[0]][next_grid[1]].non_visited_neighbors -= 1 
-
-        # check Right wall
-        if check_wall(1):  
-            map[x][y].right_wall = True
-            map[x][y].non_visited_neighbors -= 1
-        else:
-            # IMPORTANT: Since the robot has turn to right for coming its current position, now the right side of the robot will
-            # be map[x][y-1] not map[x+1][y] !!!!
-            if not map[x+1][y].visited:
-                non_visited_grids += 1
-                next_grid[0] = x+1
-
-            if not map[x][y].visited:
-                map[next_grid[0]][next_grid[1]].non_visited_neighbors -= 1
-
-        # check Up wall
-        if check_wall(0): 
-            map[x][y].up_wall = True
-            map[x][y].non_visited_neighbors -= 1
-        else:
-            if not map[x][y+1].visited: 
-                non_visited_grids += 1
-                next_grid[1] = y+1
         
-            if not map[x][y].visited:
-                map[next_grid[0]][next_grid[1]].non_visited_neighbors -= 1
+        if check_neighbors:
+            for side in ["left","right","up"]:
+                next_grid, unvisited_grids = check_side(current_grid, direction[side], next_grid, unvisited_grids)
 
         # If the current grid is not visited before, then mark it visited
         if not map[x][y].visited: 
             map[x][y].visited = True
-            non_visited_grids -= 1
+            unvisited_grids -= 1
             # BLUETOOTH COMMUNICATION SHOULD OCCUR HERE!
             s.send(get_color())
-            
-        # if all neighbors are visited, go back by DFS route
-        if map[x][y].non_visited_neighbors == 0: 
-            current_grid = [x,y]
-            target_grid = [map[x][y].last_move[0], map[x][y].last_move[1]]
-            
-            move_to_next_grid(current_grid, target_grid)
-        else: # if you can go to a nonvisited grid, save its last_move due to DFS, and go there
-            current_grid = [x,y]
+            if unvisited_grids == 0:
+                print("BEEP! BEEP! BEEP!")
+                # THE MAPPING MODE SHOULD TERMINATE
+
+        
+        if map[x][y].unvisited_neighbors > 0:  
+            # if you can go to an unvisited grid, save its last_move for the sake of DFS
             map[next_grid[0]][next_grid[1]].last_move[0] = x
             map[next_grid[0]][next_grid[1]].last_move[1] = y
-            x = next_grid[0]
-            y = next_grid[1]
-
-            move_to_next_grid(current_grid, next_grid)
+        else: 
+            # if all neighbors are visited, go back through DFS route
+            next_grid = map[x][y].last_move
+            
+        x = next_grid[0]
+        y = next_grid[1]
+        move_to_next_grid(current_grid, next_grid)
 
 if __name__ == "__main__":
     # bluetooth iletişim olacak, robot->pc string gönderimi robotta encode bilgisayarda decode edilecek
