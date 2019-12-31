@@ -160,11 +160,11 @@ def check_side(current_grid, wall_direction, next_grid, unvisited_grids):
     y = current_grid[1]
 
     if wall_detected:
-            map[x][y].wall[wall_direction] = True
+            map[x][y].wall[(current_direction + wall_direction)%4] = True
             map[x][y].unvisited_neighbors -= 1
     else:  # if the visible grid is not visited, acknowledge that the mapping task is incomplete
 
-        visible_grid = orientation([x,y], wall_direction)
+        visible_grid = orientation(current_grid, wall_direction)
         if not map[visible_grid[0]][visible_grid[1]].visited: 
             unvisited_grids += 1
             next_grid = visible_grid
@@ -231,6 +231,7 @@ def mapping(socket):
         if check_neighbors:
             for side in ["left","right","up"]:
                 next_grid, unvisited_grids = check_side(current_grid, direction[side], next_grid, unvisited_grids)
+                print("After checking " + side + " next grid = " + str(next_grid))
 
         # If the current grid is not visited before, then mark it visited
         if not map[x][y].visited: 
