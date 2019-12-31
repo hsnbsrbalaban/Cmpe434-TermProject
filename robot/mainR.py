@@ -13,8 +13,6 @@ from ev3dev.ev3 import Sound
 import sys, threading, math, pickle, copy, bluetooth
 import grid
 # ################################################################################################################# #
-
-
 # MOTOR METHODS
 speed = 20
 wheelDiameter = 56
@@ -71,7 +69,7 @@ def turn90DegreeTank(turnDegree):
             leftMotorThread.join()
     else:
         return
-
+# ################################################################################################################# #
 def debug_print(*args, **kwargs):
     '''Print debug messages to stderr.
     This shows up in the output panel in VS Code.
@@ -94,14 +92,12 @@ current_direction = direction["up"]
 def move_to_next_grid(initial_pos, next_pos):
     global current_direction
 
-    debug_print(str(initial_pos) + " " + str(next_pos))
-
     dx = next_pos[0] - initial_pos[0]
     dy = next_pos[1] - initial_pos[1]
     control = (-dx+1)%2
     target_direction = 0
     if control == 0:
-        target_direction += (-dx+1)/2 * 3
+        target_direction += (-dx+1)/2 * 2 + 1
     else:
         target_direction += (-dy+1)/2 * 2
 
@@ -112,7 +108,7 @@ def move_to_next_grid(initial_pos, next_pos):
     
     turn90DegreeTank(turn_degree)
     current_direction = target_direction
-    moveForwardTank(330)
+    moveForwardTank(335)
 
 def get_color():
     value = colorS.value()
@@ -140,8 +136,6 @@ def check_wall(wall_direction):
 
     value = value / 10
 
-    debug_print("UltraS Value: " + str(value))
-
     return value < 25
 
 
@@ -162,8 +156,6 @@ def check_side(current_grid, wall_direction, next_grid, unvisited_grids):
     global map
     wall_detected = check_wall(wall_direction)
 
-    debug_print("Wall Detected: " + str(wall_detected))
-
     x = current_grid[0]
     y = current_grid[1]
 
@@ -182,6 +174,21 @@ def check_side(current_grid, wall_direction, next_grid, unvisited_grids):
             map[next_grid[0]][next_grid[1]].unvisited_neighbors -= 1 
 
     return next_grid, unvisited_grids
+
+def encode_message(g, pos):
+    # m_xyurdlc where x and y are the positions; u, r, d, l are walls and c is color
+    message = "m_"
+    message = message + str(pos[0]) + str(pos[1]) 
+
+    for w in g.wall:
+        if w:
+            message += "t"
+        else:
+            message += "f" 
+        
+    message = message + str(g.color)
+
+    return message
 
 def mapping(socket):
     global map
@@ -229,8 +236,10 @@ def mapping(socket):
         if not map[x][y].visited: 
             map[x][y].visited = True
             unvisited_grids -= 1
-            # BLUETOOTH COMMUNICATION SHOULD OCCUR HERE!
-            # s.send(get_color())
+            
+            message = encode_message(map[x][y], current_grid)
+            socket.send(message)
+
             if unvisited_grids == 0:
                 print("BEEP! BEEP! BEEP!")
                 # THE MAPPING MODE SHOULD TERMINATE
@@ -267,16 +276,11 @@ if __name__ == "__main__":
     # for buttons : pressed_m, pressed_t, pressed_i, pressed_r,
     # in mapping mode: m_<i>_<j>_<color_num>_<wall_encoded> OR m_already OR m_is_over
 
-    # server_mac = '88:B1:11:79:C5:F6'
-    # port = 4 
-    # btn = Button()
+    server_mac = '88:B1:11:79:C5:F6'
+    port = 4 
+    btn = Button()
 
-    # s = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-    # s.connect((server_mac, port))
-    
-    # while not btn.any():
-    #     sleep(0.05)
+    s = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+    s.connect((server_mac, port))
 
-    # BASILAN BUTONU BUL
-    s = "BY"
     mapping(s)

@@ -5,7 +5,7 @@ class Grid():
         self.visited = False
         self.last_move = [0,0] # (x,y) address of the parent grid in the DFS route
         
-        self.color = 'white'
+        self.color = 6
         self.unvisited_neighbors = 4
 
         self.wall = [False,False,False,False]
