@@ -1,0 +1,30 @@
+b'm_44fftt'
+X: 4 Y: 4
+Up: False Right: False Down: True Left: True
+b'm_45ftft'
+X: 4 Y: 5
+Up: False Right: True Down: False Left: True
+b'm_46ffft'
+X: 4 Y: 6
+Up: False Right: False Down: False Left: True
+b'm_47tfft'
+X: 4 Y: 7
+Up: True Right: False Down: False Left: True
+b'm_57tttf'
+X: 5 Y: 7
+Up: True Right: True Down: True Left: False
+b'm_56tfff'
+X: 5 Y: 6
+Up: True Right: False Down: False Left: False
+b'm_66ffff'
+X: 6 Y: 6
+Up: False Right: False Down: False Left: False
+b'm_76ttff'
+X: 7 Y: 6
+Up: True Right: True Down: False Left: False
+b'm_75fttf'
+X: 7 Y: 5
+Up: False Right: True Down: True Left: False
+b'm_65fftf'
+X: 6 Y: 5
+Up: False Right: False Down: True Left: False

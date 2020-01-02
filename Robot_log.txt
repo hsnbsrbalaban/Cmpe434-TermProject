@@ -1,0 +1,214 @@
+Starting: brickrun --directory="/home/robot/Term Project/robot" "/home/robot/Term Project/robot/mainR.py"
+Started.
+----------
+Inside Mapping, Current Grid: [4, 4]
+###################INSIDE CHECK_SIDE###################
+Checking 3
+X: 4 Y: 4
+Wall Detected
+After checking left next grid = [4, 4] u_g : 1
+###################INSIDE CHECK_SIDE###################
+Checking 1
+X: 4 Y: 4
+Not Wall Detected, visible_grid: [5, 4]
+After checking right next grid = [5, 4] u_g : 2
+###################INSIDE CHECK_SIDE###################
+Checking 0
+X: 4 Y: 4
+Not Wall Detected, visible_grid: [4, 5]
+After checking up next grid = [4, 5] u_g : 3
+Now visiting 4 4
+Inside Mapping, Current Grid: [4, 5]
+###################INSIDE CHECK_SIDE###################
+Checking 3
+X: 4 Y: 5
+Wall Detected
+After checking left next grid = [4, 5] u_g : 2
+###################INSIDE CHECK_SIDE###################
+Checking 1
+X: 4 Y: 5
+Wall Detected
+After checking right next grid = [4, 5] u_g : 2
+###################INSIDE CHECK_SIDE###################
+Checking 0
+X: 4 Y: 5
+Not Wall Detected, visible_grid: [4, 6]
+After checking up next grid = [4, 6] u_g : 3
+Now visiting 4 5
+Inside Mapping, Current Grid: [4, 6]
+###################INSIDE CHECK_SIDE###################
+Checking 3
+X: 4 Y: 6
+Wall Detected
+After checking left next grid = [4, 6] u_g : 2
+###################INSIDE CHECK_SIDE###################
+Checking 1
+X: 4 Y: 6
+Not Wall Detected, visible_grid: [5, 6]
+After checking right next grid = [5, 6] u_g : 3
+###################INSIDE CHECK_SIDE###################
+Checking 0
+X: 4 Y: 6
+Not Wall Detected, visible_grid: [4, 7]
+After checking up next grid = [4, 7] u_g : 4
+Now visiting 4 6
+Inside Mapping, Current Grid: [4, 7]
+###################INSIDE CHECK_SIDE###################
+Checking 3
+X: 4 Y: 7
+Wall Detected
+After checking left next grid = [4, 7] u_g : 3
+###################INSIDE CHECK_SIDE###################
+Checking 1
+X: 4 Y: 7
+Not Wall Detected, visible_grid: [5, 7]
+After checking right next grid = [5, 7] u_g : 4
+###################INSIDE CHECK_SIDE###################
+Checking 0
+X: 4 Y: 7
+Wall Detected
+After checking up next grid = [5, 7] u_g : 4
+Now visiting 4 7
+Inside Mapping, Current Grid: [5, 7]
+###################INSIDE CHECK_SIDE###################
+Checking 3
+X: 5 Y: 7
+Wall Detected
+After checking left next grid = [5, 7] u_g : 3
+###################INSIDE CHECK_SIDE###################
+Checking 1
+X: 5 Y: 7
+Wall Detected
+After checking right next grid = [5, 7] u_g : 3
+###################INSIDE CHECK_SIDE###################
+Checking 0
+X: 5 Y: 7
+Wall Detected
+After checking up next grid = [5, 7] u_g : 3
+Now visiting 5 7
+Inside Mapping, Current Grid: [4, 7]
+###################INSIDE CHECK_SIDE###################
+Checking 3
+X: 4 Y: 7
+Wall Detected
+After checking left next grid = [4, 7] u_g : 2
+###################INSIDE CHECK_SIDE###################
+Checking 1
+X: 4 Y: 7
+Wall Detected
+After checking right next grid = [4, 7] u_g : 2
+###################INSIDE CHECK_SIDE###################
+Checking 0
+X: 4 Y: 7
+Wall Detected
+After checking up next grid = [4, 7] u_g : 2
+Inside Mapping, Current Grid: [4, 6]
+###################INSIDE CHECK_SIDE###################
+Checking 3
+X: 4 Y: 6
+Not Wall Detected, visible_grid: [5, 6]
+After checking left next grid = [5, 6] u_g : 3
+###################INSIDE CHECK_SIDE###################
+Checking 1
+X: 4 Y: 6
+Wall Detected
+After checking right next grid = [5, 6] u_g : 3
+###################INSIDE CHECK_SIDE###################
+Checking 0
+X: 4 Y: 6
+Not Wall Detected, visible_grid: [4, 5]
+After checking up next grid = [5, 6] u_g : 3
+Inside Mapping, Current Grid: [5, 6]
+###################INSIDE CHECK_SIDE###################
+Checking 3
+X: 5 Y: 6
+Wall Detected
+After checking left next grid = [5, 6] u_g : 3
+###################INSIDE CHECK_SIDE###################
+Checking 1
+X: 5 Y: 6
+Not Wall Detected, visible_grid: [5, 5]
+After checking right next grid = [5, 5] u_g : 4
+###################INSIDE CHECK_SIDE###################
+Checking 0
+X: 5 Y: 6
+Not Wall Detected, visible_grid: [6, 6]
+After checking up next grid = [6, 6] u_g : 5
+Now visiting 5 6
+Inside Mapping, Current Grid: [6, 6]
+###################INSIDE CHECK_SIDE###################
+Checking 3
+X: 6 Y: 6
+Not Wall Detected, visible_grid: [6, 7]
+After checking left next grid = [6, 7] u_g : 5
+###################INSIDE CHECK_SIDE###################
+Checking 1
+X: 6 Y: 6
+Not Wall Detected, visible_grid: [6, 5]
+After checking right next grid = [6, 5] u_g : 6
+###################INSIDE CHECK_SIDE###################
+Checking 0
+X: 6 Y: 6
+Not Wall Detected, visible_grid: [7, 6]
+After checking up next grid = [7, 6] u_g : 7
+Now visiting 6 6
+Inside Mapping, Current Grid: [7, 6]
+###################INSIDE CHECK_SIDE###################
+Checking 3
+X: 7 Y: 6
+Wall Detected
+After checking left next grid = [7, 6] u_g : 6
+###################INSIDE CHECK_SIDE###################
+Checking 1
+X: 7 Y: 6
+Not Wall Detected, visible_grid: [7, 5]
+After checking right next grid = [7, 5] u_g : 7
+###################INSIDE CHECK_SIDE###################
+Checking 0
+X: 7 Y: 6
+Wall Detected
+After checking up next grid = [7, 5] u_g : 7
+Now visiting 7 6
+Inside Mapping, Current Grid: [7, 5]
+###################INSIDE CHECK_SIDE###################
+Checking 3
+X: 7 Y: 5
+Wall Detected
+After checking left next grid = [7, 5] u_g : 6
+###################INSIDE CHECK_SIDE###################
+Checking 1
+X: 7 Y: 5
+Not Wall Detected, visible_grid: [6, 5]
+After checking right next grid = [6, 5] u_g : 7
+###################INSIDE CHECK_SIDE###################
+Checking 0
+X: 7 Y: 5
+Wall Detected
+After checking up next grid = [6, 5] u_g : 7
+Now visiting 7 5
+Inside Mapping, Current Grid: [6, 5]
+###################INSIDE CHECK_SIDE###################
+Checking 3
+X: 6 Y: 5
+Wall Detected
+After checking left next grid = [6, 5] u_g : 6
+###################INSIDE CHECK_SIDE###################
+Checking 1
+X: 6 Y: 5
+Not Wall Detected, visible_grid: [6, 6]
+After checking right next grid = [6, 5] u_g : 6
+###################INSIDE CHECK_SIDE###################
+Checking 0
+X: 6 Y: 5
+Not Wall Detected, visible_grid: [5, 5]
+After checking up next grid = [5, 5] u_g : 7
+Now visiting 6 5
+Inside Mapping, Current Grid: [7, 5]
+###################INSIDE CHECK_SIDE###################
+Checking 3
+X: 7 Y: 5
+Not Wall Detected, visible_grid: [7, 6]
+After checking left next grid = [7, 5] u_g : 6
+Remote process ended due to signal: Killed
+----------
+Exited with error code 1.
