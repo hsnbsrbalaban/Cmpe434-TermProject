@@ -82,6 +82,9 @@ map = [[grid.Grid() for x in range(9)] for y in range(9)]
 
 unvisitedGridList = []
 
+outfile = open('map', 'wb')
+infile = open('map', 'rb')
+
 direction = {  
   "up": 0,
   "right": 1,
@@ -187,7 +190,7 @@ def check_side(current_grid, wall_direction, next_grid, unvisited_grids):
 
     return next_grid, unvisited_grids
 
-def encode_message(g, pos):
+def encode_message_mapping(g, pos):
     # m_xyurdlc where x and y are the positions; u, r, d, l are walls and c is color
     message = "m_"
     message = message + str(pos[0]) + str(pos[1]) 
@@ -238,11 +241,22 @@ def mapping(socket):
         if color == 0 or color == 1:
             debug_print("color == BLACK")
             map[x][y].visited = True
+            map[map[x][y].last_move[0]][map[x][y].last_move[1]].unvisited_neighbors -= 1
             temp = unvisited_grids - 1
             for side in ["left","right","up"]:
                 _, _ = check_side(current_grid, direction[side], next_grid, unvisited_grids)
             next_grid = map[x][y].last_move
+            message = encode_message_mapping(map[x][y], current_grid)
+            socket.send(message)
+            x = next_grid[0]
+            y = next_grid[1]
             unvisited_grids = temp
+            
+            if unvisited_grids == 0:
+                Sound.beep()
+                Sound.beep()
+                Sound.beep()
+                continue
             move_to_next_grid(current_grid, next_grid)
             continue
         
@@ -257,12 +271,15 @@ def mapping(socket):
             map[map[x][y].last_move[0]][map[x][y].last_move[1]].unvisited_neighbors -= 1
             unvisited_grids -= 1
             debug_print("Now visiting " + str(x) + " " + str(y))
-            message = encode_message(map[x][y], current_grid)
+            message = encode_message_mapping(map[x][y], current_grid)
             socket.send(message)
 
             # THE MAPPING MODE SHOULD TERMINATE
             if unvisited_grids == 0:
                 Sound.beep()
+                Sound.beep()
+                Sound.beep()
+                continue
         
         if map[x][y].unvisited_neighbors > 0:  
             # if you can go to an unvisited grid, save its last_move for the sake of DFS
@@ -275,9 +292,93 @@ def mapping(socket):
         x = next_grid[0]
         y = next_grid[1]
         move_to_next_grid(current_grid, next_grid)
+    pickle.dump(map, outfile)
+    outfile.close()
+
+# LOCALIZATION
+def move_particle(particle, heading):
+    orientations = [[0,1], [1,0], [0,-1], [-1,0]] 
+    d_pos = orientations[heading]
+    i = particle[0] + d_pos[0] 
+    j = particle[1] + d_pos[1] 
+    movement = [i-particle[0], j-particle[1]]
+    d = orientations.index(movement)
+
+    return [i, j, localization[particle[i]][particle[j]].color, d]
+
+def move_robot(heading):
+    turn_number = heading
+    if turn_number == 3:
+        turn_number = -1
+    turn_degree = turn_number * 90
+    
+    turn90DegreeTank(turn_degree)
+    moveForwardTank(335)
+
+def encode_message_localization(heading, color, up, right, left):
+    # l_hcurl000
+    message = "l_" + str(heading) + str(color)
+    message += "t" if up else "f"
+    message += "t" if right else "f"
+    message += "t" if left else "f"
+
+    message += "000"
+
+    return message
 
 def localization(socket):
-    print("fck")
+    localization_map = pickle.load(infile)
+    infile.close()
+
+    particles = []
+
+    for i in range(7):
+        for j in range(7):
+            if localization_map[i+1][j+1].visited:
+                for d in range(4):
+                    particles.append([i, 8-j, localization_map[i][j].color, d])
+    
+    localized = False
+    while not localized:
+        current_color = get_color()
+        up = check_wall(direction["up"])
+        right = check_wall(direction["right"])
+        left = check_wall(direction["left"])
+        expected_state = [up, right, left, current_color]
+
+        heading = 0
+        if left: 
+            heading = 3
+        if right: 
+            heading = 1
+        if up:
+            heading = 0
+        
+        message = encode_message_localization(heading, current_color, up, right, left)
+        socket.send(message)
+
+        for particle in particles:
+            not_removed = True
+            particle_state = [0,0,0,0]
+            particle_state[0] = localization_map[particle[0]][particle[1]].wall[(0+particle[3])%4]
+            particle_state[1] = localization_map[particle[0]][particle[1]].wall[1+particle[3])%4]
+            particle_state[2] = localization_map[particle[0]][particle[1]].wall[3+particle[3])%4]
+            particle_state[3] = particle[2]
+            for i in range(4):
+                if particle_state[i] != expected_state[i]:
+                    particles.remove(particle)
+                    not_removed = False
+                    if len(particles) == 1:
+                        localized = True
+                        break
+            if localized:
+                break
+            if not_removed:
+                particle = move_particle(particle, heading)
+        if localized:
+                continue
+        move_robot(heading)
+
 
 if __name__ == "__main__":
     # bluetooth iletişim olacak, robot->pc string gönderimi robotta encode bilgisayarda decode edilecek
@@ -305,10 +406,11 @@ if __name__ == "__main__":
     s = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
     s.connect((server_mac, port))
 
-    # while not btn.any():
-    #     sleep(0.05)
-    
-    # if btn.up():
-    mapping(s)
-    # elif btn.down():
-    #     localization(s)
+    while True:
+        while not btn.any():
+            sleep(0.05)
+            
+        if btn.up():
+            mapping(s)
+        elif btn.down():
+            localization(s)
