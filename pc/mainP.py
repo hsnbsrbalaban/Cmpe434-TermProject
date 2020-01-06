@@ -48,6 +48,7 @@ def rectangle(c, grid):
 
 def decode_message(message):
     # m_xyurdlc
+    print(message)
     # x and y are positions
     x = int(message[2]) - 48 #48 is the ascii value of 0
     y = int(message[3]) - 48
@@ -58,11 +59,11 @@ def decode_message(message):
     wall[2] = True if message[6] == ord("t") else False
     wall[3] = True if message[7] == ord("t") else False
     # c is color
-    color = int(message[8]) - 48
-
+    # color = int(message[8]) - 48
+    color = 0
     print("X: " + str(x) + " Y: " + str(y))
     print("Up: " + str(wall[0]) + " Right: " + str(wall[1]) + " Down: " + str(wall[2]) + " Left: " + str(wall[3]))
-    print("Color: " + str(color) + "\n##########################################################################")
+    # print("Color: " + str(color) + "\n##########################################################################")
     return x, y, color, wall
 
 host_mac='02:16:53:47:F5:76' # robot's mac address
@@ -73,24 +74,24 @@ s=bluetooth.BluetoothSocket(bluetooth.RFCOMM)
 s.bind(("", port))
 s.listen(backlog)
 
-try:
-    client, clientInfo = s.accept()
-    while True:
-        data = client.recv(size)
-        if data:
-            x, y, color, wall = decode_message(data)
-            grids[x][y].walls = wall
+# try:
+client, clientInfo = s.accept()
+while True:
+    data = client.recv(size)
+    if data:
+        x, y, color, wall = decode_message(data)
+        grids[x][y].walls = wall
 
-            root = Tk()
-            root.geometry('456x456')
-            c = Canvas(root, height=454, width=454)
-            for i in range(9):
-                for j in range(9):
-                    rectangle(c, grids[i][j])
-            c.pack()
-            root.mainloop()
-                # client.send(data) # Echo back to client
-except:	
-    print("Closing socket")
-    client.close()
-    s.close()
+        root = Tk()
+        root.geometry('456x456')
+        c = Canvas(root, height=454, width=454)
+        for i in range(9):
+            for j in range(9):
+                rectangle(c, grids[i][j])
+        c.pack()
+        root.mainloop()
+            # client.send(data) # Echo back to client
+# except:	
+#     print("Closing socket")
+#     client.close()
+#     s.close()

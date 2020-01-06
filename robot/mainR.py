@@ -24,7 +24,7 @@ moveTank = MoveTank(OUTPUT_A, OUTPUT_D)
 moveDiff = MoveDifferential(OUTPUT_A, OUTPUT_D, EV3EducationSetTire, 115)
 
 ultrasonicS = UltrasonicSensor()
-ultrasonicM = MediumMotor(OUTPUT_B)
+ultrasonicM = MediumMotor(OUTPUT_C)
 colorS = ColorSensor()
 
 ultrasonicS.mode = 'US-DIST-CM'
@@ -79,6 +79,8 @@ def debug_print(*args, **kwargs):
 
 # MAPPING
 map = [[grid.Grid() for x in range(9)] for y in range(9)]
+
+unvisitedGridList = []
 
 direction = {  
   "up": 0,
@@ -155,23 +157,33 @@ def orientation(current_grid, local_bias):
 def check_side(current_grid, wall_direction, next_grid, unvisited_grids):
     global map
     wall_detected = check_wall(wall_direction)
-
+    debug_print("######INSIDE CHECK_SIDE######")
+    debug_print("Checking " + str(wall_direction))
     x = current_grid[0]
     y = current_grid[1]
-
+    debug_print("X: " + str(x) + " Y: " + str(y))
     if wall_detected:
-            map[x][y].wall[(current_direction + wall_direction)%4] = True
+        debug_print("Wall Detected")
+        map[x][y].wall[int((current_direction + wall_direction)%4)] = True
+        if not map[x][y].visited:
             map[x][y].unvisited_neighbors -= 1
+        debug_print("u_n: " + str(map[x][y].unvisited_neighbors))
     else:  # if the visible grid is not visited, acknowledge that the mapping task is incomplete
 
         visible_grid = orientation(current_grid, wall_direction)
+        debug_print("Not Wall Detected, visible_grid: " + str(visible_grid))
         if not map[visible_grid[0]][visible_grid[1]].visited: 
-            unvisited_grids += 1
             next_grid = visible_grid
+
+            temp = visible_grid[0] * 10 + visible_grid[1]
+            if not temp in unvisitedGridList:
+                unvisitedGridList.append(temp)
+                unvisited_grids += 1
+            
         
         if not map[x][y].visited:       
             # decrement the visible grid's n_v_n
-            map[next_grid[0]][next_grid[1]].unvisited_neighbors -= 1 
+            map[visible_grid[0]][visible_grid[1]].unvisited_neighbors -= 1 
 
     return next_grid, unvisited_grids
 
@@ -186,7 +198,7 @@ def encode_message(g, pos):
         else:
             message += "f" 
         
-    message = message + str(g.color)
+    message += str(g.color)
 
     return message
 
@@ -204,21 +216,27 @@ def mapping(socket):
         current_grid = [x,y]  # address of current grid
         next_grid = [x,y]  # address of next grid that will be visited
         check_neighbors = True  # the boolean value if we need to check neighbors
-
+        debug_print("***************************************************")
+        debug_print("Inside Mapping, Current Grid: " + str(current_grid))
         
         if map[x][y].unvisited_neighbors == 0:
+            debug_print("STUCK, unvisited_neighbors == 0")
             check_neighbors = False
             if map[x][y].visited: # if itself and all neighbors are visited, go one step back in DFS route.
                 next_grid = [map[x][y].last_move[0], map[x][y].last_move[1]]
+                x = next_grid[0]
+                y = next_grid[1]
                 move_to_next_grid(current_grid, next_grid)
                 continue
 
         # get and set the color of the current grid
         color = get_color()
         map[x][y].color = color
+        debug_print("Color: " + str(color))
 
         # if the color is black, send information, go one step back
-        if color == "Black":
+        if color == 0 or color == 1:
+            debug_print("color == BLACK")
             map[x][y].visited = True
             temp = unvisited_grids - 1
             for side in ["left","right","up"]:
@@ -231,20 +249,20 @@ def mapping(socket):
         if check_neighbors:
             for side in ["left","right","up"]:
                 next_grid, unvisited_grids = check_side(current_grid, direction[side], next_grid, unvisited_grids)
-                print("After checking " + side + " next grid = " + str(next_grid))
-
+                debug_print("After checking " + side + " next grid = " + str(next_grid) + " u_g : " + str(unvisited_grids))
+            debug_print("U_N: " + str(map[x][y].unvisited_neighbors))
         # If the current grid is not visited before, then mark it visited
         if not map[x][y].visited: 
             map[x][y].visited = True
+            map[map[x][y].last_move[0]][map[x][y].last_move[1]].unvisited_neighbors -= 1
             unvisited_grids -= 1
-            
+            debug_print("Now visiting " + str(x) + " " + str(y))
             message = encode_message(map[x][y], current_grid)
             socket.send(message)
 
+            # THE MAPPING MODE SHOULD TERMINATE
             if unvisited_grids == 0:
-                print("BEEP! BEEP! BEEP!")
-                # THE MAPPING MODE SHOULD TERMINATE
-
+                Sound.beep()
         
         if map[x][y].unvisited_neighbors > 0:  
             # if you can go to an unvisited grid, save its last_move for the sake of DFS
@@ -257,6 +275,9 @@ def mapping(socket):
         x = next_grid[0]
         y = next_grid[1]
         move_to_next_grid(current_grid, next_grid)
+
+def localization(socket):
+    print("fck")
 
 if __name__ == "__main__":
     # bluetooth iletişim olacak, robot->pc string gönderimi robotta encode bilgisayarda decode edilecek
@@ -284,4 +305,10 @@ if __name__ == "__main__":
     s = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
     s.connect((server_mac, port))
 
+    # while not btn.any():
+    #     sleep(0.05)
+    
+    # if btn.up():
     mapping(s)
+    # elif btn.down():
+    #     localization(s)
